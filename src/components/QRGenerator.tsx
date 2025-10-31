@@ -14,8 +14,13 @@ export const QRGenerator: React.FC<QRGeneratorProps> = ({
   eventTitle,
 }) => {
   const printRef = useRef<HTMLDivElement>(null);
-  const baseUrl = process.env.NEXT_PUBLIC_QR_BASE_URL || 'http://localhost:3000';
-  const registrationUrl = `${baseUrl}/guest/${eventId}/register`;
+  // Prefer a runtime value when available: on the client use NEXT_PUBLIC_QR_BASE_URL or the current origin.
+  // On the server (during SSR) fall back to the build-time env or localhost.
+  const baseUrl = (typeof window !== 'undefined')
+    ? (process.env.NEXT_PUBLIC_QR_BASE_URL || window.location.origin)
+    : (process.env.NEXT_PUBLIC_QR_BASE_URL || 'http://localhost:3000');
+
+  const registrationUrl = `${baseUrl.replace(/\/+$/,'')}/guest/${eventId}/register`;
 
   const handlePrint = () => {
     const printWindow = window.open('', '_blank');

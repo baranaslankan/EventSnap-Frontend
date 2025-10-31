@@ -65,29 +65,10 @@ export const FileUpload: React.FC<FileUploadProps> = ({
     }));
     setUploads(initialUploads);
 
-    // --- DIRECT UPLOAD LOGIC (MATCHES POSTMAN) ---
-    const formData = new FormData();
-    files.forEach((file) => {
-      formData.append('photo', file);
-    });
-    // eventId'yi props veya context ile alman gerekebilir, örnek olarak 2 yazıyorum:
-    formData.append('eventId', '2');
-    for (let pair of formData.entries()) {
-      if (pair[1] instanceof File) {
-        console.log('FormData:', pair[0], pair[1].name, pair[1].type, pair[1].size);
-      } else {
-        console.log('FormData:', pair[0], pair[1]);
-      }
-    }
+    // Delegate upload to parent via prop so all uploads use the central API client
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('eventsnap_token') : '';
-      const res = await fetch(process.env.NEXT_PUBLIC_API_BASE_URL + '/photos/upload', {
-        method: 'POST',
-        body: formData,
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined
-      });
-      const data = await res.json();
-      console.log('Upload response:', data);
+      // onUpload may handle progress and throw on error
+      await onUpload(files);
       setUploads((prev) =>
         prev.map((upload) => ({ ...upload, progress: 100, status: 'success' }))
       );

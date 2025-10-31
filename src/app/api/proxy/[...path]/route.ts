@@ -2,7 +2,10 @@ import { NextRequest } from 'next/server'
 
 async function proxy(request: NextRequest, { params }: { params: { path: string[] } }, method: string) {
   const path = params.path?.join('/') || ''
-  const url = new URL(path, process.env.NEXT_API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001')
+  // Normalize backend base URL to avoid double slashes when joining paths
+  const rawBase = process.env.NEXT_API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001'
+  const base = rawBase.replace(/\/+$|(?<!:)\/+$/g, '').replace(/\\/g, '/')
+  const url = new URL(base + '/' + path)
   url.search = request.nextUrl.search
 
   const headers: Record<string, string> = {}

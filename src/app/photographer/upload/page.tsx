@@ -1,7 +1,7 @@
 
 "use client"
 import { useState } from 'react'
-import axios from 'axios'
+import { api } from '@/lib/api'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/Button'
 import { useAuth } from '@/hooks/useAuth'
@@ -23,33 +23,19 @@ export default function UploadPhotosPage() {
       alert('No valid file selected.');
       return;
     }
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('eventId', eventId);
-    // Log FormData content
-    for (let pair of formData.entries()) {
-      if (pair[1] instanceof File) {
-        console.log('FormData:', pair[0], pair[1].name, pair[1].type, pair[1].size);
-      } else {
-        console.log('FormData:', pair[0], pair[1]);
-      }
-    }
-    console.log('Uploading file:', file);
-    setUploading(true);
     try {
-      const res = await fetch(process.env.NEXT_PUBLIC_API_BASE_URL + '/photos/upload', {
-        method: 'POST',
-        body: formData
-      });
-      const data = await res.json();
-      console.log('Upload response:', data);
+      await api.uploadPhotos([file], eventId)
       setFiles(null);
       router.push('/photographer/dashboard');
+      setUploading(false);
+      return;
     } catch (err) {
       console.error('Upload error:', err);
       alert('Upload failed. See console for details.');
+      setUploading(false);
+      return;
     }
-    setUploading(false);
+    
   }
 
   return (

@@ -11,6 +11,7 @@ import type { Event, Photo, Guest } from '@/types'
 import { ImageGrid } from '@/components/ImageGrid'
 import { TagSelector } from '@/components/TagSelector'
 import { QRGenerator } from '@/components/QRGenerator'
+import { extractS3Key } from '@/lib/utils'
 
 
   export default function EventDetailPage() {
@@ -44,10 +45,29 @@ import { QRGenerator } from '@/components/QRGenerator'
         const urlMap: { [key: string]: string } = {}
         await Promise.all(
           normalizedPhotos.map(async (photo: Photo) => {
-            const key = photo.file_url && photo.file_url.includes('amazonaws.com/')
-              ? photo.file_url.split('amazonaws.com/')[1]
-              : photo.file_url || ''
-            urlMap[photo.id] = key ? await api.getPhotoUrl(key) : ''
+            const fileUrl = photo.file_url || ''
+            if (fileUrl && fileUrl.startsWith('http')) {
+              // If DB stores a full S3 URL we must NOT use it directly when it's private;
+              // instead extract the S3 key and request a presigned URL. If it's not an S3
+              // host (for example a public CDN URL), use it directly.
+              try {
+                const u = new URL(fileUrl)
+                const host = u.hostname
+                const isS3 = host.includes('s3.amazonaws.com') || host.includes('.s3.') || host.endsWith('amazonaws.com')
+                if (isS3) {
+                  const key = extractS3Key(fileUrl)
+                  urlMap[photo.id] = key ? await api.getPhotoUrl(key) : ''
+                } else {
+                  urlMap[photo.id] = encodeURI(fileUrl)
+                }
+              } catch (e) {
+                // On parse failure, fallback to using the raw URL encoded
+                urlMap[photo.id] = encodeURI(fileUrl)
+              }
+            } else {
+              const key = extractS3Key(fileUrl)
+              urlMap[photo.id] = key ? await api.getPhotoUrl(key) : ''
+            }
           })
         )
         setPhotoUrls(urlMap)

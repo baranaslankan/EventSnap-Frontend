@@ -1,7 +1,7 @@
 "use client"
 import { useEffect, useState } from 'react'
 import { useParams, useSearchParams, type ReadonlyURLSearchParams } from 'next/navigation'
-import axios from 'axios'
+import { extractS3Key } from '@/lib/utils'
 import { Button } from '@/components/Button'
 import { Spinner } from '@/components/Spinner'
 import { ImageGrid } from '@/components/ImageGrid'
@@ -49,8 +49,9 @@ export default function GuestAlbumPage() {
   useEffect(() => {
     async function fetchPhotos() {
       setLoading(true)
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001'}/photos/event/${eventId}`)
-      const allPhotos = res.data || []
+      // Use central api client so requests go through the same-origin proxy
+      // and avoid mixed-content when frontend is served over HTTPS.
+      const allPhotos = (await api.getEventPhotos(eventId)) || []
       setPhotos(allPhotos)
       const tagged = allPhotos.filter((photo: any) =>
         Array.isArray(photo.tagged_guests) &&
@@ -59,10 +60,25 @@ export default function GuestAlbumPage() {
       const urlMap: { [key: string]: string } = {}
       await Promise.all(
         tagged.map(async (photo: any) => {
-          const key = photo.file_url && photo.file_url.includes('amazonaws.com/')
-            ? photo.file_url.split('amazonaws.com/')[1]
-            : photo.file_url || ''
-          urlMap[photo.id] = key ? await api.getPhotoUrl(key) : ''
+          const fileUrl = photo.file_url || ''
+          if (fileUrl && fileUrl.startsWith('http')) {
+            try {
+              const u = new URL(fileUrl)
+              const host = u.hostname
+              const isS3 = host.includes('s3.amazonaws.com') || host.includes('.s3.') || host.endsWith('amazonaws.com')
+              if (isS3) {
+                const key = extractS3Key(fileUrl)
+                urlMap[photo.id] = key ? await api.getPhotoUrl(key) : ''
+              } else {
+                urlMap[photo.id] = encodeURI(fileUrl)
+              }
+            } catch (e) {
+              urlMap[photo.id] = encodeURI(fileUrl)
+            }
+          } else {
+            const key = extractS3Key(fileUrl)
+            urlMap[photo.id] = key ? await api.getPhotoUrl(key) : ''
+          }
         })
       )
       setPhotoUrls(urlMap)
