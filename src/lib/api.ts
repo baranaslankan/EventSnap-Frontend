@@ -1,6 +1,10 @@
 import axios, { AxiosInstance, AxiosProgressEvent } from 'axios';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+// In browser use the secure proxy endpoint so we don't trigger mixed-content errors.
+// On server (SSR) use the actual backend URL from NEXT_API_BASE_URL.
+const API_BASE_URL = typeof window === 'undefined'
+  ? process.env.NEXT_API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001'
+  : '/api/proxy';
 
 class ApiClient {
   private client: AxiosInstance;
