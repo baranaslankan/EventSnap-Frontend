@@ -1,0 +1,21 @@
+node_modules/
+.next/
+dist/
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.vscode/
+.DS_Store
+
+# common extras
+coverage/
+npm-debug.log*
+yarn-error.log*
+.idea/
+.env
+public/build/
+.parcel-cache/
+.cache/
+logs/
+.turbo/
