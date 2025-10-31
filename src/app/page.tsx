@@ -1,6 +1,18 @@
-import { redirect } from 'next/navigation';
+"use client"
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 
 export default function Page() {
-  // Immediately redirect root to photographer login
-  redirect('/photographer/login');
+  const router = useRouter()
+
+  useEffect(() => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('eventsnap_token') : null
+    if (token) {
+      router.replace('/photographer/dashboard')
+    } else {
+      router.replace('/photographer/login')
+    }
+  }, [router])
+
+  return null
 }

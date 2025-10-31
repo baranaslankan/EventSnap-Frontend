@@ -26,10 +26,18 @@ async function proxy(request: NextRequest, { params }: { params: { path: string[
   res.headers.forEach((v, k) => {
     // strip hop-by-hop headers
     if (['transfer-encoding', 'connection', 'keep-alive', 'proxy-authenticate', 'proxy-authorization', 'te', 'trailers', 'upgrade'].includes(k)) return
+    // Do NOT forward content-encoding from the backend if the fetch implementation
+    // has already decoded the body: forwarding a stale Content-Encoding header
+    // while returning a decompressed body causes ERR_CONTENT_DECODING_FAILED in browsers.
+    if (k === 'content-encoding') return
     resHeaders[k] = v
   })
 
   const arrayBuffer = await res.arrayBuffer()
+
+  // Ensure content-length matches the actual bytes being sent
+  resHeaders['content-length'] = String(arrayBuffer.byteLength)
+
   return new Response(arrayBuffer, {
     status: res.status,
     headers: resHeaders,

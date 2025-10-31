@@ -113,7 +113,7 @@ import { QRGenerator } from '@/components/QRGenerator'
 
     if (!event) {
       return (
-        <div className="min-h-screen flex items-center justify-center text-gray-500 text-base">Etkinlik bulunamadı</div>
+        <div className="min-h-screen flex items-center justify-center text-gray-500 text-base">Event not found</div>
       )
     }
 

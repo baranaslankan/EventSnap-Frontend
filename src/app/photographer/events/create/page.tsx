@@ -19,7 +19,8 @@ export default function CreateEventPage() {
     setLoading(true)
     try {
       const event = await api.createEvent({ title, date, location, type })
-      router.push(`/photographer/events/${event.id}`)
+      // After creating event, redirect to dashboard (list of events)
+      router.push('/photographer/dashboard')
     } finally {
       setLoading(false)
     }
