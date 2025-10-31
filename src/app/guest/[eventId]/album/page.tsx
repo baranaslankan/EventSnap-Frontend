@@ -1,6 +1,6 @@
 "use client"
 import { useEffect, useState } from 'react'
-import { useParams, useSearchParams } from 'next/navigation'
+import { useParams, useSearchParams, type ReadonlyURLSearchParams } from 'next/navigation'
 import axios from 'axios'
 import { Button } from '@/components/Button'
 import { Spinner } from '@/components/Spinner'
@@ -9,9 +9,7 @@ import { api } from '@/lib/api'
 
 
 
-// Always get guestId from URL or localStorage, reactively
-function getGuestIdFromUrlOrStorage(searchParams: URLSearchParams) {
-  // This function is now only used in useEffect, not directly in render
+function getGuestIdFromUrlOrStorage(searchParams: ReadonlyURLSearchParams) {
   if (typeof window !== 'undefined') {
     const urlGuestId = searchParams.get('guestId')
     if (urlGuestId && urlGuestId.trim() !== '') {
@@ -35,14 +33,12 @@ export default function GuestAlbumPage() {
   const searchParams = useSearchParams()
   const [guestId, setGuestId] = useState('')
 
-  // Reactively get guestId after hydration
   useEffect(() => {
     setGuestId(getGuestIdFromUrlOrStorage(searchParams))
   }, [searchParams])
 
   useEffect(() => {
     if (photos.length > 0) {
-      // Debug: log guestId and tagged_guests for each photo
       console.log('Current guestId:', guestId)
       photos.forEach(photo => {
         console.log('Photo', photo.id, 'tagged_guests:', photo.tagged_guests)
@@ -56,7 +52,6 @@ export default function GuestAlbumPage() {
       const res = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001'}/photos/event/${eventId}`)
       const allPhotos = res.data || []
       setPhotos(allPhotos)
-      // fetch presigned urls for tagged photos only
       const tagged = allPhotos.filter((photo: any) =>
         Array.isArray(photo.tagged_guests) &&
         photo.tagged_guests.some((tg: any) => tg.guest_id?.toString() === guestId)
@@ -77,7 +72,6 @@ export default function GuestAlbumPage() {
   }, [eventId, guestId])
 
 
-  // Only show photos where guest is tagged (backend: photo.tagged_guests[])
   const taggedPhotos = photos.filter(photo =>
     Array.isArray(photo.tagged_guests) &&
     photo.tagged_guests.some((tg: any) => tg.guest_id?.toString() === guestId)

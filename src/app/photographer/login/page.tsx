@@ -47,7 +47,7 @@ export default function LoginPage() {
             onChange={e => setEmail(e.target.value)}
             required
             placeholder="Email"
-            className="w-full bg-red-500 px-4 py-3 rounded-xl border border-gray-200 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 bg-white py-3 rounded-xl border border-gray-200 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
             autoFocus
           />
           <input
